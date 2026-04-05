@@ -7,12 +7,16 @@ import About from './pages/About';
 import Projects from './pages/Projects';
 import Experience from './pages/Experience';
 import Contact from './pages/Contact';
+import CustomCursor from './components/CustomCursor';
+import ParticlesBackground from './components/ParticlesBackground';
 import './App.css';
 
 function App() {
   return (
     <Router>
       <div className="app-wrapper">
+        <CustomCursor />
+        <ParticlesBackground />
         <Navbar />
         <main>
           <Routes>

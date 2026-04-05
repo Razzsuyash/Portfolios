@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import Typewriter from 'typewriter-effect';
 import { ArrowRight, Database, BrainCircuit, Terminal } from 'lucide-react';
 import './Home.css';
 
@@ -9,9 +10,17 @@ const Home = () => {
       <section className="hero-section">
         <div className="hero-content animate-fade-in">
           <div className="hero-badge delay-100">Welcome to my space!</div>
-          <h1 className="delay-200">
+          <h1 className="delay-200" style={{ minHeight: '120px' }}>
             Hi, I'm <br />
-            <span className="text-gradient">Suyash Raj</span>
+            <span className="text-gradient">
+              <Typewriter
+                options={{
+                  strings: ['Suyash Raj', 'a Software Engineer', 'a Problem Solver', 'a Backend Developer'],
+                  autoStart: true,
+                  loop: true,
+                }}
+              />
+            </span>
           </h1>
           <p className="hero-subtitle delay-300">
             I'm a Software Engineer with a B.Tech in Instrumentation and Control Engineering. 

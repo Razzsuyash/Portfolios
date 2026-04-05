@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tilt } from 'react-tilt';
 import { Code, Database, Terminal, Server } from 'lucide-react';
 import './About.css';
 
@@ -42,20 +43,22 @@ const About = () => {
           <h3 className="delay-200" style={{ marginBottom: '1.5rem' }}>Technical Arsenal</h3>
           <div className="skills-grid">
             {skills.map((skillGroup, idx) => (
-              <div key={idx} className={`skill-card glass delay-${100 * (idx+2)}`}>
-                <div className="skill-header">
-                  {idx === 0 && <Code size={20} className="text-accent" />}
-                  {idx === 1 && <Terminal size={20} className="text-accent" />}
-                  {idx === 2 && <Database size={20} className="text-accent" />}
-                  {idx === 3 && <Server size={20} className="text-accent" />}
-                  <h4>{skillGroup.category}</h4>
+              <Tilt key={idx} options={{ max: 15, scale: 1.05, transition: true }}>
+                <div className={`skill-card glass delay-${100 * (idx+2)}`} style={{ height: '100%' }}>
+                  <div className="skill-header">
+                    {idx === 0 && <Code size={20} className="text-accent" />}
+                    {idx === 1 && <Terminal size={20} className="text-accent" />}
+                    {idx === 2 && <Database size={20} className="text-accent" />}
+                    {idx === 3 && <Server size={20} className="text-accent" />}
+                    <h4>{skillGroup.category}</h4>
+                  </div>
+                  <div className="skill-tags">
+                    {skillGroup.items.map((item, i) => (
+                      <span key={i} className="skill-tag">{item}</span>
+                    ))}
+                  </div>
                 </div>
-                <div className="skill-tags">
-                  {skillGroup.items.map((item, i) => (
-                    <span key={i} className="skill-tag">{item}</span>
-                  ))}
-                </div>
-              </div>
+              </Tilt>
             ))}
           </div>
         </div>
