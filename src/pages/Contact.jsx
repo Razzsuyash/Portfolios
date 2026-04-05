@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, MapPin, Send } from 'lucide-react';
-import { FaLinkedinIn, FaGithub, FaTwitter } from 'react-icons/fa';
+import { Mail, MapPin, Send, Phone } from 'lucide-react';
+import { FaLinkedinIn, FaGithub } from 'react-icons/fa';
 import './Contact.css';
 
 const Contact = () => {
@@ -31,8 +31,8 @@ const Contact = () => {
         <div className="contact-info delay-200">
           <h3>Let's collaborate</h3>
           <p>
-            Whether you have a question, a project proposal, or just want to say hi, 
-            my inbox is always open. I'll try my best to get back to you!
+            Whether you are looking for a reliable Software Engineer, have a project proposal, or just want to connect, 
+            my inbox is always open. I'll get back to you!
           </p>
 
           <div className="contact-details">
@@ -40,24 +40,31 @@ const Contact = () => {
               <div className="icon-wrapper glass"><Mail size={20} className="text-accent" /></div>
               <div>
                 <h4>Email</h4>
-                <span>hello@dataviz.dev</span>
+                <span>Suyashraj2000@gmail.com</span>
               </div>
             </div>
             
             <div className="contact-item">
+               <div className="icon-wrapper glass"><Phone size={20} className="text-accent" /></div>
+               <div>
+                 <h4>Phone</h4>
+                 <span>+91 8588087722</span>
+               </div>
+            </div>
+
+            <div className="contact-item">
               <div className="icon-wrapper glass"><MapPin size={20} className="text-accent" /></div>
               <div>
                 <h4>Location</h4>
-                <span>San Francisco, CA (Remote)</span>
+                <span>New Delhi, Delhi, India</span>
               </div>
             </div>
           </div>
 
           <h4 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#fff' }}>Social Profiles</h4>
           <div className="social-links">
-            <a href="#" className="social-icon glass"><FaLinkedinIn size={22} /></a>
-            <a href="#" className="social-icon glass"><FaGithub size={22} /></a>
-            <a href="#" className="social-icon glass"><FaTwitter size={22} /></a>
+            <a href="https://linkedin.com/in/razzsuyash" target="_blank" rel="noopener noreferrer" className="social-icon glass"><FaLinkedinIn size={22} /></a>
+            <a href="https://github.com/razzsuyash" target="_blank" rel="noopener noreferrer" className="social-icon glass"><FaGithub size={22} /></a>
           </div>
         </div>
 
@@ -68,44 +75,44 @@ const Contact = () => {
               <p>Thank you for reaching out. I'll get back to you soon.</p>
             </div>
           ) : (
-            <>
-              <div className="form-group">
-                <label htmlFor="name">Name</label>
-                <input 
-                  type="text" 
-                  id="name" 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                  required 
-                  placeholder="John Doe"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  value={formData.email} 
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                  required 
-                  placeholder="john@example.com"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="message">Message</label>
-                <textarea 
-                  id="message" 
-                  rows="5" 
-                  value={formData.message} 
-                  onChange={(e) => setFormData({...formData, message: e.target.value})} 
-                  required 
-                  placeholder="How can I help you?"
-                ></textarea>
-              </div>
-              <button type="submit" className="button-primary submit-btn" disabled={isSubmitting}>
-                {isSubmitting ? 'Sending...' : <><Send size={18} /> Send Message</>}
-              </button>
-            </>
+             <>
+               <div className="form-group">
+                 <label htmlFor="name">Name</label>
+                 <input 
+                   type="text" 
+                   id="name" 
+                   value={formData.name} 
+                   onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                   required 
+                   placeholder="Your Name"
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="email">Email</label>
+                 <input 
+                   type="email" 
+                   id="email" 
+                   value={formData.email} 
+                   onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                   required 
+                   placeholder="you@domain.com"
+                 />
+               </div>
+               <div className="form-group">
+                 <label htmlFor="message">Message</label>
+                 <textarea 
+                   id="message" 
+                   rows="4" 
+                   value={formData.message} 
+                   onChange={(e) => setFormData({...formData, message: e.target.value})} 
+                   required 
+                   placeholder="How can I help you?"
+                 ></textarea>
+               </div>
+               <button type="submit" className="button-primary submit-btn" disabled={isSubmitting}>
+                 {isSubmitting ? 'Sending...' : <><Send size={18} /> Send Message</>}
+               </button>
+             </>
           )}
         </form>
       </div>

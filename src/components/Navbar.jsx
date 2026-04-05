@@ -20,7 +20,7 @@ const Navbar = () => {
       <div className="navbar-container">
         <NavLink to="/" className="navbar-logo">
           <Network className="logo-icon" size={28} />
-          <span className="logo-text text-gradient">DataViz.</span>
+          <span className="logo-text text-gradient">Suyash.</span>
         </NavLink>
 
         <div className="desktop-menu">

@@ -5,31 +5,31 @@ import './Experience.css';
 const Experience = () => {
   const experiences = [
     {
-      role: "Senior Data Scientist",
-      company: "TechNova Analytics",
-      period: "2021 - Present",
-      description: "Leading a team of 4 data scientists to develop and deploy machine learning models for predictive maintenance, resulting in a 20% reduction in equipment downtime. Architected a real-time data streaming pipeline using Kafka and Spark.",
+      role: "Software Engineer",
+      company: "Tata Consultancy Services",
+      period: "Feb 2025 - Present",
+      description: "Developed and maintained Java Spring Boot microservices supporting large-scale IoT data processing. Implemented RESTful APIs for device monitoring, improving response efficiency by 70%. Integrated Hibernate ORM, reducing query latency by 25%. Built modular back-end components using JDBC, Servlets, and JSP, deployed on Apache Tomcat. Utilized JUnit, Mockito, and Jenkins pipelines for CI/CD.",
       type: "work"
     },
     {
-      role: "Machine Learning Engineer",
-      company: "Globex Corporation",
-      period: "2018 - 2021",
-      description: "Designed recommendation systems for an e-commerce platform serving 2M+ active users. Improved click-through rates by 15% using collaborative filtering and deep learning algorithms.",
+      role: "Software Development Intern",
+      company: "Courpedia",
+      period: "Jan 2024 - Mar 2024",
+      description: "Developed web utilities using Java, Servlets, JSP, and MySQL to improve performance and usability. Created a QR code generator adopted by 1,000+ users alongside secure data APIs. Enhanced data workflows with optimized SQL scripts, reducing ETL runtime by 40%.",
       type: "work"
     },
     {
-      role: "Data Analyst",
-      company: "Stark Industries",
-      period: "2016 - 2018",
-      description: "Developed automated dashboards and reports using Tableau and SQL. Conducted A/B testing for marketing campaigns, increasing conversion rates by 8%.",
+      role: "Strategy Head - Travelling and Hiking Club",
+      company: "NSUT",
+      period: "Jan 2022 - Dec 2023",
+      description: "Led planning and execution of national trips for 300+ students; boosted membership by 40%. Spearheaded eco-tourism and community initiatives. Managed partnerships with vendors and organized seminars and safety training.",
       type: "work"
     },
     {
-      role: "M.S. Computer Science",
-      company: "University of Technology",
-      period: "2014 - 2016",
-      description: "Specialization in Artificial Intelligence and Machine Learning. Thesis on 'Optimizing Neural Networks for Edge Devices'.",
+      role: "B.Tech. in Instrumentation and Control Engineering",
+      company: "Netaji Subhash University Of Technology (NSUT)",
+      period: "Sept 2020 - May 2024",
+      description: "New Delhi, Delhi",
       type: "education"
     }
   ];

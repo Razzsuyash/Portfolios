@@ -5,35 +5,18 @@ import './Projects.css';
 const Projects = () => {
   const projectsData = [
     {
-      title: "Customer Churn Predictor",
-      description: "An end-to-end ML pipeline predicting customer churn using XGBoost. Includes an interactive Streamlit dashboard for real-time risk assessment.",
-      tags: ["Python", "XGBoost", "Streamlit", "AWS S3"],
-      githubLink: "https://github.com",
-      liveLink: "https://example.com",
-      image: "", // Leave empty for placeholder
+      title: "Smart Inventory Management System",
+      description: "Developed a Spring Boot-based inventory system with CRUD APIs and JWT-secured authentication. Implemented ORM via Hibernate to handle 10K+ records efficiently. Deployed application using Apache Tomcat and maintained a modular MVC design.",
+      tags: ["Java", "Spring Boot", "Hibernate", "MySQL"],
+      githubLink: "https://github.com/razzsuyash",
       delay: 100
     },
     {
-      title: "NLP Sentiment Analyzer",
-      description: "A deep learning model utilizing BERT to analyze sentiment from social media streams regarding major tech stocks in real-time.",
-      tags: ["PyTorch", "HuggingFace transformers", "Kafka", "PostgreSQL"],
-      githubLink: "https://github.com",
+      title: "Machine Learning Movie Recommender",
+      description: "Built a content recommendation engine analyzing 5,000+ movies with 95% accuracy. Applied NLP using CountVectorizer and PorterStemmer for efficient tag generation. Optimized the similarity matrix using cosine similarity and deployed with AWS Lambda.",
+      tags: ["Python", "Sklearn"],
+      githubLink: "https://github.com/razzsuyash",
       delay: 200
-    },
-    {
-      title: "Retail Demand Forecaster",
-      description: "Time-series forecasting model using Facebook Prophet and LSTM networks to predict weekly sales across 500+ retail locations.",
-      tags: ["Python", "Prophet", "TensorFlow", "Pandas"],
-      liveLink: "https://example.com",
-      delay: 300
-    },
-    {
-      title: "Medical Image Segmenter",
-      description: "A U-Net architecture computer vision model designed to segment MRI scans and identify potential anomalies with 98% accuracy.",
-      tags: ["TensorFlow", "Keras", "OpenCV", "Flask"],
-      githubLink: "https://github.com",
-      liveLink: "https://example.com",
-      delay: 400
     }
   ];
 
@@ -45,7 +28,7 @@ const Projects = () => {
       </div>
       
       <p className="projects-subtitle delay-200">
-        A selection of my best work in machine learning, data engineering, and predictive analytics.
+        A selection of my best work in backend API development, full-stack architecture, and machine learning.
       </p>
 
       <div className="projects-grid">
