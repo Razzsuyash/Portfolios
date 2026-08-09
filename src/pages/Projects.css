@@ -1,18 +1,152 @@
 .projects-subtitle {
   font-size: 1.1rem;
-  margin-bottom: 3rem;
-  max-width: 600px;
+  margin-bottom: 2rem;
+  max-width: 700px;
 }
 
+/* GitHub Profile Showcase Card */
+.github-profile-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.75rem 2rem;
+  margin-bottom: 2.5rem;
+  border-radius: var(--border-radius, 16px);
+  background: linear-gradient(135deg, rgba(31, 40, 51, 0.75) 0%, rgba(11, 12, 16, 0.85) 100%);
+  border: 1px solid rgba(102, 252, 241, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  gap: 1.5rem;
+}
+
+.github-profile-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.github-icon-glow {
+  color: var(--accent-color);
+  padding: 0.75rem;
+  background: rgba(102, 252, 241, 0.1);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(102, 252, 241, 0.3);
+  box-shadow: 0 0 20px rgba(102, 252, 241, 0.2);
+}
+
+.github-profile-info h3 {
+  margin: 0 0 0.4rem 0;
+  font-size: 1.35rem;
+  color: #fff;
+}
+
+.github-profile-info p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.github-cta-btn {
+  white-space: nowrap;
+  padding: 0.85rem 1.4rem;
+  font-size: 0.95rem;
+}
+
+/* Category Filter Tabs */
+.filter-tabs-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.filter-btn:hover {
+  background: rgba(102, 252, 241, 0.1);
+  border-color: rgba(102, 252, 241, 0.3);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #0b0c10;
+  box-shadow: 0 4px 16px rgba(102, 252, 241, 0.35);
+}
+
+.filter-count {
+  padding: 0.15rem 0.45rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.filter-btn.active .filter-count {
+  background: rgba(0, 0, 0, 0.2);
+  color: #0b0c10;
+}
+
+/* Projects Grid */
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 2rem;
-  padding-bottom: 2rem;
+  padding-bottom: 3rem;
+}
+
+@media (max-width: 900px) {
+  .github-profile-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .github-cta-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 768px) {
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .filter-tabs-container {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
