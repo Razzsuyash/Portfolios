@@ -109,9 +109,9 @@ def cosine_similarity(a, b):
 
 # --- Google Gemini API Calls (using requests library) ---
 def get_gemini_embedding(text, gemini_key):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={gemini_key}"
     payload = {
-        "model": "models/text-embedding-004",
+        "model": "models/gemini-embedding-001",
         "content": {"parts": [{"text": text}]}
     }
     response = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
