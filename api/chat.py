@@ -44,6 +44,52 @@ Technical Projects:
    - Expanded the training dataset by 300% using data augmentation techniques.
 """
 
+def query_offline_resume(query):
+    q = query.lower().strip()
+
+    if any(k in q for k in ['tcs', 'totalenergies', 'clever energy', 'experience', 'work', 'job', 'current role', 'kafka', 'iot']):
+        return "### 💼 Experience: Backend Engineer @ TCS (Client: TotalEnergies)\n\n" \
+               "• **IoT Energy Optimization:** Python backend services processing **50K+ sensor records/day**.\n" \
+               "• **Kafka Pipelines:** Real-time sensor stream ingestion (processing latency reduced by **35%**).\n" \
+               "• **FastAPI & Flask REST APIs:** Developed high-throughput microservices.\n" \
+               "• **Data Science:** Pandas & NumPy feature extraction and preprocessing (40% time savings)."
+
+    if any(k in q for k in ['skill', 'stack', 'tech', 'python', 'fastapi', 'backend', 'database', 'languages']):
+        return "### ⚡ Technical Skills\n\n" \
+               "• **Languages:** Python, JavaScript, SQL, HTML5, CSS3\n" \
+               "• **Backend & APIs:** FastAPI, Flask, Apache Kafka, REST APIs, Microservices, ETL, SQLAlchemy ORM\n" \
+               "• **Databases:** PostgreSQL, MySQL, OpenSearch\n" \
+               "• **Libraries:** Pandas, NumPy, Scikit-learn, TensorFlow, Keras"
+
+    if any(k in q for k in ['project', 'movie', 'potato', 'ai', 'ml', 'recommend', 'optistack']):
+        return "### 🚀 Key Projects\n\n" \
+               "1. **Movie Recommender System:** FastAPI & NLP content recommendation engine (95% accuracy).\n" \
+               "2. **Potato Disease CNN Classifier:** Deep learning TensorFlow model (93% accuracy).\n" \
+               "3. **OptiStack AI:** Cloud system optimization dashboard."
+
+    if any(k in q for k in ['courpedia', 'intern', 'internship']):
+        return "### 🎓 SDE Intern @ Courpedia\n\n" \
+               "• Developed responsive web applications with HTML5, CSS3, and JavaScript.\n" \
+               "• Built interactive tools like QR Code Generator and Random Password Generator.\n" \
+               "• Optimized DOM loading and rendering performance."
+
+    if any(k in q for k in ['education', 'college', 'university', 'nsut', 'degree', 'btech']):
+        return "### 🏛️ Education Background\n\n" \
+               "• **Degree:** B.Tech in Instrumentation & Control Engineering\n" \
+               "• **Institution:** Netaji Subhash University Of Technology (NSUT), New Delhi\n" \
+               "• **Duration:** Sept 2020 - July 2024"
+
+    if any(k in q for k in ['contact', 'email', 'phone', 'reach', 'hire', 'location', 'resume']):
+        return "### 📬 Contact Details\n\n" \
+               "• **Email:** [Suyashraj2000@gmail.com](mailto:Suyashraj2000@gmail.com)\n" \
+               "• **Phone:** 8588087722\n" \
+               "• **Location:** New Delhi / Pune (Open to relocation)\n" \
+               "• **LinkedIn:** [linkedin.com/in/razzsuyash](https://linkedin.com/in/razzsuyash)\n" \
+               "• **GitHub:** [github.com/razzsuyash](https://github.com/razzsuyash)"
+
+    return "### 👋 Hello! I'm Suyash's AI Assistant.\n\n" \
+           "I can answer questions about Suyash's experience at TCS, Kafka & IoT streams, Python backend APIs, technical skills, and college projects. Try asking one of the quick suggestions chips below!"
+
 def split_text_into_chunks(text, chunk_size=500, chunk_overlap=100):
     chunks = []
     start = 0
@@ -61,7 +107,6 @@ def cosine_similarity(a, b):
         return 0
     return dot / (mag_a * mag_b)
 
-# --- Free Google Gemini API Helpers ---
 def get_gemini_embedding(text, gemini_key):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={gemini_key}"
     headers = {"Content-Type": "application/json"}
@@ -69,7 +114,6 @@ def get_gemini_embedding(text, gemini_key):
         "model": "models/text-embedding-004",
         "content": {"parts": [{"text": text}]}
     }
-    
     req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
     with urllib.request.urlopen(req) as response:
         res = json.loads(response.read().decode('utf-8'))
@@ -82,7 +126,6 @@ def get_gemini_completion(prompt, gemini_key):
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.4}
     }
-    
     req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
     with urllib.request.urlopen(req) as response:
         res = json.loads(response.read().decode('utf-8'))
@@ -110,15 +153,15 @@ class handler(BaseHTTPRequestHandler):
             query = body.get("query", "")
             custom_text = body.get("custom_text", "")
 
-            # 1. Prioritize Google Gemini API Key (100% Free Tier!)
-            gemini_key = os.environ.get("GEMINI_API_KEY")
-            openai_key = os.environ.get("OPENAI_API_KEY")
+            # Support variants of environment variables (with/without _API)
+            gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_KEY")
+            openai_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_KEY")
 
             context_source = custom_text if custom_text.strip() else RESUME_CONTEXT
             chunks = split_text_into_chunks(context_source, 500, 100)
 
             if gemini_key:
-                # Use Gemini Free RAG
+                # Use Gemini RAG
                 chunk_vectors = [get_gemini_embedding(c, gemini_key) for c in chunks]
                 query_vector = get_gemini_embedding(query, gemini_key)
                 
@@ -166,11 +209,14 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             else:
-                # Neither key is present
-                self.wfile.write(json.dumps({
-                    "success": False, 
-                    "error": "No LLM API keys found. Please set GEMINI_API_KEY (Free) or OPENAI_API_KEY in environment variables."
-                }).encode('utf-8'))
+                # Fallback to backend offline keyword search (Safe & 100% Free)
+                result_text = query_offline_resume(query)
+                self.wfile.write(json.dumps({"success": True, "result": result_text}).encode('utf-8'))
 
         except Exception as e:
-            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
+            # Fallback on exceptions as well
+            try:
+                result_text = query_offline_resume(query)
+                self.wfile.write(json.dumps({"success": True, "result": result_text}).encode('utf-8'))
+            except Exception as inner_e:
+                self.wfile.write(json.dumps({"success": False, "error": str(inner_e)}).encode('utf-8'))
