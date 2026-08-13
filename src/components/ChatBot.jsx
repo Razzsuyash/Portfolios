@@ -1,28 +1,55 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, MessageSquare, X, Send, Sparkles, Download, Mail, ExternalLink, RefreshCw } from 'lucide-react';
+import { Bot, X, Send, Sparkles, Download, RefreshCw, Settings, FileText, Globe, Key, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { resumeData } from '../utils/resumeData';
 import { downloadResume } from '../utils/downloadResume';
 import './ChatBot.css';
 
-// RAG Retrieval & Response Generation Engine
-const queryRAGKnowledgeBase = (query) => {
+// --- Client-Side RAG Utilities ---
+
+// 1. Text Splitter (Mimicking CharacterTextSplitter)
+const splitTextIntoChunks = (text, chunkSize = 500, chunkOverlap = 100) => {
+  if (!text) return [];
+  const chunks = [];
+  let startIndex = 0;
+
+  while (startIndex < text.length) {
+    let endIndex = startIndex + chunkSize;
+    if (endIndex > text.length) {
+      endIndex = text.length;
+    }
+    chunks.push(text.slice(startIndex, endIndex));
+    startIndex += (chunkSize - chunkOverlap);
+  }
+  return chunks;
+};
+
+// 2. Vector math utilities
+const dotProduct = (a, b) => a.reduce((sum, val, i) => sum + val * b[i], 0);
+const magnitude = (arr) => Math.sqrt(arr.reduce((sum, val) => sum + val * val, 0));
+const cosineSimilarity = (a, b) => {
+  const magA = magnitude(a);
+  const magB = magnitude(b);
+  if (magA === 0 || magB === 0) return 0;
+  return dotProduct(a, b) / (magA * magB);
+};
+
+// 3. Fallback Offline Search (Keyword Retrieval)
+const queryOfflineKnowledgeBase = (query) => {
   const q = query.toLowerCase().trim();
 
-  // Experience / TCS / TotalEnergies / Kafka / IoT
   if (q.includes('tcs') || q.includes('totalenergies') || q.includes('clever energy') || q.includes('experience') || q.includes('work') || q.includes('job') || q.includes('current role') || q.includes('kafka') || q.includes('iot')) {
     const tcs = resumeData.experience[0];
     return `### 💼 Current Role: ${tcs.role} @ ${tcs.company}\n\n` +
       `**Client:** ${tcs.client} | **Duration:** ${tcs.period} (${tcs.location})\n\n` +
-      `**Key Engineering Achievements:**\n` +
-      `• **IoT Energy Optimization Platform:** Engineered scalable Python backend services processing **50K+ sensor records/day** across a distributed 5-layer architecture.\n` +
-      `• **Apache Kafka Pipelines:** Built high-throughput Producer-Consumer streams & robust ETL pipelines, **cutting processing latency by 35%**.\n` +
-      `• **FastAPI & Flask APIs:** Developed modular REST APIs with SQLAlchemy ORM and PostgreSQL/MySQL, boosting system throughput by **25%**.\n` +
-      `• **Data Preprocessing:** Leveraged Pandas & NumPy for feature engineering, reducing preprocessing time by **40%**.`;
+      `**Achievements:**\n` +
+      `• **IoT Energy Optimization:** Scalable Python backend services processing **50K+ sensor records/day**.\n` +
+      `• **Kafka Pipelines:** High-throughput producer-consumer streams reducing ingestion latency by **35%**.\n` +
+      `• **REST APIs:** FastAPI & Flask services improving system throughput by **25%**.\n` +
+      `• **Data Science:** Pandas & NumPy for feature engineering, reducing preprocessing time by **40%**.`;
   }
 
-  // Skills / Tech Stack
   if (q.includes('skill') || q.includes('stack') || q.includes('tech') || q.includes('python') || q.includes('fastapi') || q.includes('backend') || q.includes('database') || q.includes('languages')) {
-    return `### ⚡ Suyash's Technical Arsenal\n\n` +
+    return `### ⚡ Technical Skills\n\n` +
       `• **Languages:** ${resumeData.skills.languages.join(', ')}\n` +
       `• **Backend & APIs:** ${resumeData.skills.backend.join(', ')}\n` +
       `• **Databases:** ${resumeData.skills.databases.join(', ')}\n` +
@@ -31,32 +58,24 @@ const queryRAGKnowledgeBase = (query) => {
       `• **Concepts:** ${resumeData.skills.concepts.join(', ')}`;
   }
 
-  // Projects / Machine Learning / Movie / Potato
   if (q.includes('project') || q.includes('movie') || q.includes('potato') || q.includes('ai') || q.includes('ml') || q.includes('recommend') || q.includes('optistack')) {
     return `### 🚀 Key Technical Projects\n\n` +
-      `1. **Movie Recommendation System (95% Accuracy):**\n` +
-      `   • Built end-to-end NLP recommender over 5,000+ movies using CountVectorizer & Cosine Similarity.\n` +
-      `   • Deployed scalable REST APIs with **FastAPI** on **AWS**.\n\n` +
-      `2. **Potato Disease Classification (CNN - 93% Accuracy):**\n` +
-      `   • Deep Learning Computer Vision model using TensorFlow/Keras with 300% dataset augmentation.\n\n` +
-      `3. **OptiStack AI (Live Demo):**\n` +
-      `   • AI-powered cloud infrastructure optimizer analyzing stack performance.\n\n` +
-      `4. **MiddayMeal Portal (Live Demo):**\n` +
-      `   • High-volume student nutrition distribution and analytics platform.`;
+      `1. **Movie Recommendation System:** FastAPI & Streamlit NLP content recommender with 95% accuracy.\n` +
+      `2. **Potato Disease CNN Classifier:** Deep learning TensorFlow classification model with 93% accuracy.\n` +
+      `3. **OptiStack AI:** Live infrastructure & cloud configuration optimizer.\n` +
+      `4. **MiddayMeal Portal:** Live student nutrition distribution dashboard.`;
   }
 
-  // Courpedia / Internship
   if (q.includes('courpedia') || q.includes('intern') || q.includes('internship')) {
     const cp = resumeData.experience[1];
-    return `### 🎓 Software Development Engineer Intern @ Courpedia\n\n` +
+    return `### 🎓 Software Engineer Intern @ Courpedia\n\n` +
       `**Duration:** ${cp.period} | **Location:** ${cp.location}\n\n` +
-      `• Built responsive web applications using JavaScript, HTML5, and CSS3.\n` +
+      `• Developed responsive web applications using JavaScript, HTML5, and CSS3.\n` +
       `• Implemented interactive utility tools including a **QR Code Generator** and **Random Password Generator**.\n` +
       `• Optimized frontend performance with DOM manipulation and code reviews.`;
   }
 
-  // Education / College / University / NSUT
-  if (q.includes('education') || q.includes('college') || q.includes('university') || q.includes('nsut') || q.includes('degree') || q.includes('btech') || q.includes('study') || q.includes('gpa')) {
+  if (q.includes('education') || q.includes('college') || q.includes('university') || q.includes('nsut') || q.includes('degree') || q.includes('btech')) {
     return `### 🏛️ Education Background\n\n` +
       `**Institution:** ${resumeData.education.institution}\n` +
       `**Degree:** ${resumeData.education.degree}\n` +
@@ -64,32 +83,21 @@ const queryRAGKnowledgeBase = (query) => {
       `**Location:** ${resumeData.education.location}`;
   }
 
-  // Contact / Phone / Email / Hire / Location / Resume
-  if (q.includes('contact') || q.includes('email') || q.includes('phone') || q.includes('reach') || q.includes('hire') || q.includes('location') || q.includes('number') || q.includes('resume')) {
-    return `### 📬 Contact Suyash Raj\n\n` +
+  if (q.includes('contact') || q.includes('email') || q.includes('phone') || q.includes('reach') || q.includes('hire') || q.includes('location') || q.includes('resume')) {
+    return `### 📬 Contact Details\n\n` +
       `• **Email:** [${resumeData.email}](mailto:${resumeData.email})\n` +
       `• **Phone:** ${resumeData.phone}\n` +
-      `• **Location:** ${resumeData.location} (Open to remote and hybrid opportunities)\n` +
+      `• **Location:** ${resumeData.location}\n` +
       `• **LinkedIn:** [linkedin.com/in/razzsuyash](${resumeData.linkedin})\n` +
-      `• **GitHub:** [github.com/razzsuyash](${resumeData.github})\n\n` +
-      `*Tip: You can also click the "Download Resume" button below!*`;
+      `• **GitHub:** [github.com/razzsuyash](${resumeData.github})`;
   }
 
-  // Hobbies / Lifestyle / Traveling / Hiking
-  if (q.includes('hobby') || q.includes('travel') || q.includes('hiking') || q.includes('club') || q.includes('vlog') || q.includes('photo') || q.includes('outside work')) {
-    return `### 🏔️ Beyond Code: Travel & Leadership\n\n` +
-      `• **Strategy Head @ Travelling & Hiking Club (NSUT):** Led national expeditions for 300+ students and pioneered eco-tourism initiatives.\n` +
-      `• **Photography & Vlogs:** Suyash loves capturing mountain expeditions, road trips, and tech conferences. Check out the **Photos** and **Vlogs** tabs in the navbar!`;
-  }
-
-  // Default Fallback
   return `### 👋 Hello! I'm Suyash's AI Assistant.\n\n` +
-    `I can help you explore Suyash's background in detail:\n` +
+    `I can answer questions about Suyash's background:\n` +
     `• **Backend & IoT:** Python, FastAPI, Apache Kafka, 50K+ records/day at TCS.\n` +
     `• **Tech Stack:** PostgreSQL, Microservices, SQLAlchemy, Scikit-learn, React.\n` +
-    `• **Projects:** Movie Recommender, Potato Disease CNN, OptiStack AI.\n` +
-    `• **Contact Info:** Email, phone, and resume download.\n\n` +
-    `Try asking one of the quick question chips below!`;
+    `• **Projects:** Movie Recommender, Potato Disease CNN, OptiStack AI.\n\n` +
+    `To activate the **live RAG pipeline** to upload your own files or scrape URLs, click the **Settings Gear (⚙️)** in the top right and enter your OpenAI API key!`;
 };
 
 const defaultSuggestions = [
@@ -101,16 +109,25 @@ const defaultSuggestions = [
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('OPENAI_API_KEY') || '');
+  const [sourceType, setSourceType] = useState('resume'); // 'resume', 'upload', 'url'
+  const [inputUrl, setInputUrl] = useState('');
+  const [pastedText, setPastedText] = useState('');
+  const [vectorstore, setVectorstore] = useState([]); // Array of { text, embedding }
+  const [ragStatus, setRagStatus] = useState('');
+  
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: "Hi there! 👋 I'm **Suyash's AI Assistant** (powered by RAG). Ask me anything about Suyash's backend experience at TCS, Kafka & IoT pipelines, projects, or contact details!",
+      text: "Hi there! 👋 I'm **Suyash's AI Assistant**. Ask me anything about his backend experience at TCS, Kafka & IoT pipelines, projects, or contact details!\n\n*Tip: Click the Settings Gear (⚙️) to enter an OpenAI API key to upload your own documents or scrape custom URLs for live RAG question answering!*",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,7 +139,192 @@ const ChatBot = () => {
     }
   }, [messages, isOpen]);
 
-  const handleSendMessage = (textToSend = null) => {
+  // Load preloaded resume context into vectors when API key is provided
+  useEffect(() => {
+    if (apiKey && sourceType === 'resume' && vectorstore.length === 0) {
+      indexResumeContext();
+    }
+  }, [apiKey, sourceType]);
+
+  const indexResumeContext = async () => {
+    if (!apiKey) return;
+    setRagStatus('Indexing resume...');
+    try {
+      const serializedResume = JSON.stringify(resumeData);
+      const chunks = splitTextIntoChunks(serializedResume, 500, 100);
+      const embeddedChunks = await generateEmbeddingsForChunks(chunks);
+      setVectorstore(embeddedChunks);
+      setRagStatus('Resume indexed successfully!');
+    } catch (err) {
+      console.error(err);
+      setRagStatus('Error indexing resume.');
+    }
+  };
+
+  const saveApiKey = (key) => {
+    setApiKey(key);
+    localStorage.setItem('OPENAI_API_KEY', key);
+    if (key) {
+      setRagStatus('API Key saved.');
+    } else {
+      setRagStatus('API Key removed.');
+      setVectorstore([]);
+    }
+  };
+
+  // Scrape website using standard clean extractor
+  const handleUrlProcess = async () => {
+    if (!inputUrl) return;
+    setRagStatus('Fetching URL content...');
+    try {
+      // Use proxy or direct fetch depending on target site CORS support
+      const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(inputUrl)}`);
+      if (!response.ok) throw new Error('Network error');
+      const data = await response.json();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(data.contents, 'text/html');
+      
+      // Clean script/styles
+      const scripts = doc.querySelectorAll('script, style');
+      scripts.forEach(s => s.remove());
+
+      const text = doc.body.innerText || doc.body.textContent || '';
+      if (!text.trim()) {
+        setRagStatus('No readable text found at URL.');
+        return;
+      }
+
+      setRagStatus('Splitting text and embedding...');
+      const chunks = splitTextIntoChunks(text, 500, 100);
+      const embeddedChunks = await generateEmbeddingsForChunks(chunks);
+      setVectorstore(embeddedChunks);
+      setRagStatus(`URL processed! ${embeddedChunks.length} chunks indexed.`);
+    } catch (err) {
+      console.error(err);
+      setRagStatus('Error reading URL. Site might block scraping.');
+    }
+  };
+
+  // Read uploaded text document
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setRagStatus('Reading uploaded file...');
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target.result;
+      try {
+        setRagStatus('Chunking and generating embeddings...');
+        const chunks = splitTextIntoChunks(text, 500, 100);
+        const embeddedChunks = await generateEmbeddingsForChunks(chunks);
+        setVectorstore(embeddedChunks);
+        setRagStatus(`File indexed! ${embeddedChunks.length} chunks ready.`);
+      } catch (err) {
+        console.error(err);
+        setRagStatus('Error generating embeddings for file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Generate OpenAI Embeddings for text chunks
+  const generateEmbeddingsForChunks = async (chunks) => {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        input: chunks,
+        model: 'text-embedding-ada-002'
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.error?.message || 'Embedding generation failed');
+    }
+
+    const resData = await response.json();
+    return chunks.map((chunk, idx) => ({
+      text: chunk,
+      embedding: resData.data[idx].embedding
+    }));
+  };
+
+  // Generate single embedding query vector
+  const generateQueryEmbedding = async (queryText) => {
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        input: queryText,
+        model: 'text-embedding-ada-002'
+      })
+    });
+
+    if (!response.ok) throw new Error('Query embedding failed');
+    const resData = await response.json();
+    return resData.data[0].embedding;
+  };
+
+  // Core LLM Retrieval QA function
+  const runLiveRAGPipeline = async (query) => {
+    if (vectorstore.length === 0) {
+      return "I don't have any document index loaded. Please configure the source in settings.";
+    }
+
+    try {
+      // 1. Generate Query Vector
+      const queryVector = await generateQueryEmbedding(query);
+
+      // 2. Similarity Search (Top 4 most relevant chunks)
+      const scoredChunks = vectorstore.map(chunk => ({
+        ...chunk,
+        score: cosineSimilarity(queryVector, chunk.embedding)
+      }));
+
+      // Sort by similarity descending
+      scoredChunks.sort((a, b) => b.score - a.score);
+      const topChunks = scoredChunks.slice(0, 4);
+
+      // 3. Assemble Prompt Template
+      const contextText = topChunks.map(c => c.text).join('\n\n');
+      
+      const systemPrompt = `Context: ${contextText}\n\nQuestion: ${query}\n\nAnswer the question concisely based only on the given context. If the context doesn't contain relevant information, say "I don't have enough information to answer that question."\n\nBut, if the question is generic, then go ahead and answer the question, example what is an electric vehicle?`;
+
+      // 4. Request completion
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'user', content: systemPrompt }
+          ],
+          temperature: 0.4
+        })
+      });
+
+      if (!response.ok) throw new Error('Inference request failed');
+      const resData = await response.json();
+      return resData.choices[0].message.content;
+
+    } catch (err) {
+      console.error(err);
+      return `❌ RAG Pipeline Error: ${err.message}. Please check your API key or network connection.`;
+    }
+  };
+
+  const handleSendMessage = async (textToSend = null) => {
     const query = textToSend || inputValue;
     if (!query.trim()) return;
 
@@ -136,17 +338,29 @@ const ChatBot = () => {
     if (!textToSend) setInputValue('');
     setIsTyping(true);
 
-    // Simulate natural RAG semantic inference response
-    setTimeout(() => {
-      const botResponseText = queryRAGKnowledgeBase(query);
+    if (apiKey && vectorstore.length > 0) {
+      // Run full Vector RAG Pipeline
+      const ragResponse = await runLiveRAGPipeline(query);
       const botMessage = {
         sender: 'bot',
-        text: botResponseText,
+        text: ragResponse,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, botMessage]);
       setIsTyping(false);
-    }, 450);
+    } else {
+      // Fallback to offline keyword engine
+      setTimeout(() => {
+        const botResponseText = queryOfflineKnowledgeBase(query);
+        const botMessage = {
+          sender: 'bot',
+          text: botResponseText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages((prev) => [...prev, botMessage]);
+        setIsTyping(false);
+      }, 450);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -184,10 +398,17 @@ const ChatBot = () => {
               </div>
               <div>
                 <h4>Suyash AI Assistant</h4>
-                <p>RAG Knowledge Base • Online</p>
+                <p>{apiKey && vectorstore.length > 0 ? 'Live RAG Model Active' : 'RAG Knowledge Base'}</p>
               </div>
             </div>
             <div className="chatbot-header-actions">
+              <button 
+                onClick={() => setShowConfig(!showConfig)} 
+                className={`header-action-btn ${showConfig ? 'active-config' : ''}`} 
+                title="RAG Configuration Settings"
+              >
+                <Settings size={17} />
+              </button>
               <button 
                 onClick={downloadResume} 
                 className="header-action-btn" 
@@ -209,7 +430,7 @@ const ChatBot = () => {
                 <RefreshCw size={15} />
               </button>
               <button 
-                onClick={() => setIsOpen(false)} 
+                onClick={() => { setIsOpen(false); setShowConfig(false); }} 
                 className="header-close-btn"
                 title="Close Chat"
               >
@@ -217,6 +438,95 @@ const ChatBot = () => {
               </button>
             </div>
           </div>
+
+          {/* RAG Settings Configuration Panel */}
+          {showConfig && (
+            <div className="rag-config-panel glass animate-fade-in">
+              <div className="config-header">
+                <h5>RAG Configuration</h5>
+                <button className="config-close" onClick={() => setShowConfig(false)}><X size={16} /></button>
+              </div>
+
+              <div className="config-body">
+                {/* 1. API Key Input */}
+                <div className="config-section">
+                  <label className="config-label"><Key size={13} /> OpenAI API Key</label>
+                  <input
+                    type="password"
+                    placeholder="sk-proj-..."
+                    value={apiKey}
+                    onChange={e => saveApiKey(e.target.value)}
+                    className="config-input"
+                  />
+                  <p className="config-help">Your API Key is saved locally in your browser cache.</p>
+                </div>
+
+                {/* 2. Source Selector */}
+                <div className="config-section">
+                  <label className="config-label">Context Source</label>
+                  <select 
+                    value={sourceType} 
+                    onChange={e => setSourceType(e.target.value)}
+                    className="config-select"
+                    disabled={!apiKey}
+                  >
+                    <option value="resume">Preloaded Resume Document (JSON)</option>
+                    <option value="upload">Upload Custom Document (.txt, .md)</option>
+                    <option value="url">Scrape Website URL</option>
+                  </select>
+                </div>
+
+                {/* 3. Dynamic Inputs */}
+                {apiKey && sourceType === 'url' && (
+                  <div className="config-section config-input-group">
+                    <label className="config-label"><Globe size={13} /> Scrape Website URL</label>
+                    <div className="flex-input-row">
+                      <input
+                        type="url"
+                        placeholder="https://example.com"
+                        value={inputUrl}
+                        onChange={e => setInputUrl(e.target.value)}
+                        className="config-input"
+                      />
+                      <button type="button" onClick={handleUrlProcess} className="config-btn">Index</button>
+                    </div>
+                  </div>
+                )}
+
+                {apiKey && sourceType === 'upload' && (
+                  <div className="config-section">
+                    <label className="config-label"><FileText size={13} /> Upload Document</label>
+                    <input
+                      type="file"
+                      accept=".txt,.md,.json,.js,.jsx,.py"
+                      onChange={handleFileUpload}
+                      ref={fileInputRef}
+                      className="config-file-input"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current.click()} 
+                      className="button-primary config-upload-trigger"
+                    >
+                      Choose File
+                    </button>
+                  </div>
+                )}
+
+                {/* Status Bar */}
+                {ragStatus && (
+                  <div className="config-status-bar">
+                    {ragStatus.includes('Error') || ragStatus.includes('failed') ? (
+                      <AlertCircle size={14} className="text-error" />
+                    ) : (
+                      <CheckCircle2 size={14} className="text-accent" />
+                    )}
+                    <span>{ragStatus}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Messages Body */}
           <div className="chatbot-body">
