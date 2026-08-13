@@ -1,10 +1,11 @@
 import os
 import json
 import math
+import urllib.request
 from http.server import BaseHTTPRequestHandler
 from openai import OpenAI
 
-# Preloaded Resume Data (JSON / Text)
+# Preloaded Resume Data
 RESUME_CONTEXT = """
 Suyash Raj
 New Delhi, Delhi
@@ -60,6 +61,33 @@ def cosine_similarity(a, b):
         return 0
     return dot / (mag_a * mag_b)
 
+# --- Free Google Gemini API Helpers ---
+def get_gemini_embedding(text, gemini_key):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={gemini_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "model": "models/text-embedding-004",
+        "content": {"parts": [{"text": text}]}
+    }
+    
+    req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+    with urllib.request.urlopen(req) as response:
+        res = json.loads(response.read().decode('utf-8'))
+        return res['embedding']['values']
+
+def get_gemini_completion(prompt, gemini_key):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.4}
+    }
+    
+    req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+    with urllib.request.urlopen(req) as response:
+        res = json.loads(response.read().decode('utf-8'))
+        return res['candidates'][0]['content']['parts'][0]['text']
+
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
@@ -82,72 +110,67 @@ class handler(BaseHTTPRequestHandler):
             query = body.get("query", "")
             custom_text = body.get("custom_text", "")
 
+            # 1. Prioritize Google Gemini API Key (100% Free Tier!)
+            gemini_key = os.environ.get("GEMINI_API_KEY")
             openai_key = os.environ.get("OPENAI_API_KEY")
-            if not openai_key:
-                response = {
-                    "success": False,
-                    "error": "OpenAI API Key is not set in Vercel Environment Variables. Please set the OPENAI_API_KEY variable in your dashboard."
-                }
-                self.wfile.write(json.dumps(response).encode('utf-8'))
-                return
 
-            client = OpenAI(api_key=openai_key)
-
-            # Choose context
             context_source = custom_text if custom_text.strip() else RESUME_CONTEXT
-
-            # 1. Chunking
             chunks = split_text_into_chunks(context_source, 500, 100)
 
-            # 2. Get embeddings for chunks
-            embed_response = client.embeddings.create(
-                input=chunks,
-                model="text-embedding-3-small"
-            )
-            chunk_vectors = [item.embedding for item in embed_response.data]
+            if gemini_key:
+                # Use Gemini Free RAG
+                chunk_vectors = [get_gemini_embedding(c, gemini_key) for c in chunks]
+                query_vector = get_gemini_embedding(query, gemini_key)
+                
+                scored_chunks = [(c, cosine_similarity(query_vector, v)) for c, v in zip(chunks, chunk_vectors)]
+                scored_chunks.sort(key=lambda x: x[1], reverse=True)
+                top_chunks = scored_chunks[:4]
+                context_text = "\n\n".join([item[0] for item in top_chunks])
 
-            # 3. Get embedding for query
-            query_embed_response = client.embeddings.create(
-                input=query,
-                model="text-embedding-3-small"
-            )
-            query_vector = query_embed_response.data[0].embedding
+                prompt = f"Context: {context_text}\n\nQuestion: {query}\n\nAnswer the question concisely based only on the given context. If the context doesn't contain relevant information, say \"I don't have enough information to answer that question.\"\n\nBut, if the question is generic, then go ahead and answer the question, example what is an electric vehicle?"
+                
+                result_text = get_gemini_completion(prompt, gemini_key)
+                self.wfile.write(json.dumps({"success": True, "result": result_text}).encode('utf-8'))
+                return
 
-            # 4. Cosine Similarity search
-            scored_chunks = []
-            for chunk, vector in zip(chunks, chunk_vectors):
-                score = cosine_similarity(query_vector, vector)
-                scored_chunks.append((chunk, score))
+            elif openai_key:
+                # Use OpenAI RAG
+                client = OpenAI(api_key=openai_key)
+                
+                embed_response = client.embeddings.create(
+                    input=chunks,
+                    model="text-embedding-3-small"
+                )
+                chunk_vectors = [item.embedding for item in embed_response.data]
 
-            # Sort by similarity score descending
-            scored_chunks.sort(key=lambda x: x[1], reverse=True)
-            top_chunks = scored_chunks[:4]
+                query_embed_response = client.embeddings.create(
+                    input=query,
+                    model="text-embedding-3-small"
+                )
+                query_vector = query_embed_response.data[0].embedding
 
-            # 5. Build prompt
-            context_text = "\n\n".join([item[0] for item in top_chunks])
-            
-            prompt = f"Context: {context_text}\n\nQuestion: {query}\n\nAnswer the question concisely based only on the given context. If the context doesn't contain relevant information, say \"I don't have enough information to answer that question.\"\n\nBut, if the question is generic, then go ahead and answer the question, example what is an electric vehicle?"
+                scored_chunks = [(c, cosine_similarity(query_vector, v)) for c, v in zip(chunks, chunk_vectors)]
+                scored_chunks.sort(key=lambda x: x[1], reverse=True)
+                top_chunks = scored_chunks[:4]
+                context_text = "\n\n".join([item[0] for item in top_chunks])
 
-            # 6. Call ChatGPT API
-            completion = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.4
-            )
+                prompt = f"Context: {context_text}\n\nQuestion: {query}\n\nAnswer the question concisely based only on the given context. If the context doesn't contain relevant information, say \"I don't have enough information to answer that question.\"\n\nBut, if the question is generic, then go ahead and answer the question, example what is an electric vehicle?"
 
-            result_text = completion.choices[0].message.content
+                completion = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.4
+                )
+                result_text = completion.choices[0].message.content
+                self.wfile.write(json.dumps({"success": True, "result": result_text}).encode('utf-8'))
+                return
 
-            response = {
-                "success": True,
-                "result": result_text
-            }
-            self.wfile.write(json.dumps(response).encode('utf-8'))
+            else:
+                # Neither key is present
+                self.wfile.write(json.dumps({
+                    "success": False, 
+                    "error": "No LLM API keys found. Please set GEMINI_API_KEY (Free) or OPENAI_API_KEY in environment variables."
+                }).encode('utf-8'))
 
         except Exception as e:
-            response = {
-                "success": False,
-                "error": str(e)
-            }
-            self.wfile.write(json.dumps(response).encode('utf-8'))
+            self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))

@@ -1,7 +1,75 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, X, Send, Sparkles, Download, RefreshCw, Settings, FileText, Globe, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { resumeData } from '../utils/resumeData';
 import { downloadResume } from '../utils/downloadResume';
 import './ChatBot.css';
+
+// Fallback Offline Search (Keyword Retrieval)
+const queryOfflineKnowledgeBase = (query) => {
+  const q = query.toLowerCase().trim();
+
+  if (q.includes('tcs') || q.includes('totalenergies') || q.includes('clever energy') || q.includes('experience') || q.includes('work') || q.includes('job') || q.includes('current role') || q.includes('kafka') || q.includes('iot')) {
+    const tcs = resumeData.experience[0];
+    return `### 💼 Current Role: ${tcs.role} @ ${tcs.company}\n\n` +
+      `**Client:** ${tcs.client} | **Duration:** ${tcs.period} (${tcs.location})\n\n` +
+      `**Achievements:**\n` +
+      `• **IoT Energy Optimization:** Scalable Python backend services processing **50K+ sensor records/day**.\n` +
+      `• **Kafka Pipelines:** High-throughput producer-consumer streams reducing ingestion latency by **35%**.\n` +
+      `• **REST APIs:** FastAPI & Flask services improving system throughput by **25%**.\n` +
+      `• **Data Science:** Pandas & NumPy for feature engineering, reducing preprocessing time by **40%**.`;
+  }
+
+  if (q.includes('skill') || q.includes('stack') || q.includes('tech') || q.includes('python') || q.includes('fastapi') || q.includes('backend') || q.includes('database') || q.includes('languages')) {
+    return `### ⚡ Technical Skills\n\n` +
+      `• **Languages:** ${resumeData.skills.languages.join(', ')}\n` +
+      `• **Backend & APIs:** ${resumeData.skills.backend.join(', ')}\n` +
+      `• **Databases:** ${resumeData.skills.databases.join(', ')}\n` +
+      `• **Libraries & ML:** ${resumeData.skills.libraries.join(', ')}\n` +
+      `• **Tools:** ${resumeData.skills.tools.join(', ')}\n` +
+      `• **Concepts:** ${resumeData.skills.concepts.join(', ')}`;
+  }
+
+  if (q.includes('project') || q.includes('movie') || q.includes('potato') || q.includes('ai') || q.includes('ml') || q.includes('recommend') || q.includes('optistack')) {
+    return `### 🚀 Key Technical Projects\n\n` +
+      `1. **Movie Recommendation System:** FastAPI & Streamlit NLP content recommender with 95% accuracy.\n` +
+      `2. **Potato Disease CNN Classifier:** Deep learning TensorFlow classification model with 93% accuracy.\n` +
+      `3. **OptiStack AI:** Live infrastructure & cloud configuration optimizer.\n` +
+      `4. **MiddayMeal Portal:** Live student nutrition distribution dashboard.`;
+  }
+
+  if (q.includes('courpedia') || q.includes('intern') || q.includes('internship')) {
+    const cp = resumeData.experience[1];
+    return `### 🎓 Software Engineer Intern @ Courpedia\n\n` +
+      `**Duration:** ${cp.period} | **Location:** ${cp.location}\n\n` +
+      `• Developed responsive web applications using HTML5, CSS3, and JavaScript.\n` +
+      `• Implemented interactive utility tools including a **QR Code Generator** and **Random Password Generator**.\n` +
+      `• Optimized frontend performance with DOM manipulation and code reviews.`;
+  }
+
+  if (q.includes('education') || q.includes('college') || q.includes('university') || q.includes('nsut') || q.includes('degree') || q.includes('btech')) {
+    return `### 🏛️ Education Background\n\n` +
+      `**Institution:** ${resumeData.education.institution}\n` +
+      `**Degree:** ${resumeData.education.degree}\n` +
+      `**Duration:** ${resumeData.education.duration}\n` +
+      `**Location:** ${resumeData.education.location}`;
+  }
+
+  if (q.includes('contact') || q.includes('email') || q.includes('phone') || q.includes('reach') || q.includes('hire') || q.includes('location') || q.includes('resume')) {
+    return `### 📬 Contact Details\n\n` +
+      `• **Email:** [${resumeData.email}](mailto:${resumeData.email})\n` +
+      `• **Phone:** ${resumeData.phone}\n` +
+      `• **Location:** ${resumeData.location}\n` +
+      `• **LinkedIn:** [linkedin.com/in/razzsuyash](${resumeData.linkedin})\n` +
+      `• **GitHub:** [github.com/razzsuyash](${resumeData.github})`;
+  }
+
+  return `### 👋 Hello! I'm Suyash's AI Assistant.\n\n` +
+    `I can answer questions about Suyash's background:\n` +
+    `• **Backend & IoT:** Python, FastAPI, Apache Kafka, 50K+ records/day at TCS.\n` +
+    `• **Tech Stack:** PostgreSQL, Microservices, SQLAlchemy, Scikit-learn, React.\n` +
+    `• **Projects:** Movie Recommender, Potato Disease CNN, OptiStack AI.\n\n` +
+    `Ask me anything!`;
+};
 
 const defaultSuggestions = [
   "What is Suyash's experience with Kafka & IoT?",
@@ -20,7 +88,7 @@ const ChatBot = () => {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: "Hi there! 👋 I'm **Suyash's Python AI Assistant**. Ask me anything about his backend experience at TCS, Kafka & IoT pipelines, projects, or contact details!\n\n*Recruiter Info: This chatbot runs on a live Python serverless RAG pipeline!*",
+      text: "Hi there! 👋 I'm **Suyash's Python AI Assistant**. Ask me anything about his backend experience at TCS, Kafka & IoT pipelines, projects, or contact details!\n\n*Note: This chatbot automatically queries a secure Python RAG endpoint or falls back offline if needed!*",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -39,7 +107,6 @@ const ChatBot = () => {
     }
   }, [messages, isOpen]);
 
-  // Read uploaded text document to set customText context
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -54,7 +121,6 @@ const ChatBot = () => {
     reader.readAsText(file);
   };
 
-  // Fetch website content using CORS proxy to load into customText context
   const handleUrlProcess = async () => {
     if (!inputUrl) return;
     setRagStatus('Fetching URL content...');
@@ -111,7 +177,7 @@ const ChatBot = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Server connection failed.');
+        throw new Error('Server connection offline.');
       }
 
       const resData = await response.json();
@@ -124,14 +190,24 @@ const ChatBot = () => {
         };
         setMessages((prev) => [...prev, botMessage]);
       } else {
-        throw new Error(resData.error || 'Server error');
+        // Log backend warning (e.g. quota limit) and fallback to keyword retrieval
+        console.warn("Backend RAG warning, falling back to client semantic rules:", resData.error);
+        const fallbackText = queryOfflineKnowledgeBase(query);
+        const botMessage = {
+          sender: 'bot',
+          text: fallbackText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        setMessages((prev) => [...prev, botMessage]);
       }
 
     } catch (err) {
-      console.error(err);
+      console.warn("RAG backend unreachable, using offline client-side fallback:", err.message);
+      // Seamless degradation to offline keyword engine (Completely Free & Silent!)
+      const fallbackText = queryOfflineKnowledgeBase(query);
       const botMessage = {
         sender: 'bot',
-        text: `⚠️ **Python Backend Connection Error**: ${err.message}. Please verify that the \`OPENAI_API_KEY\` is configured correctly in your Vercel Environment Variables.`,
+        text: fallbackText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages((prev) => [...prev, botMessage]);
@@ -184,8 +260,8 @@ const ChatBot = () => {
                 <span className="online-status-indicator"></span>
               </div>
               <div>
-                <h4>Suyash Python AI</h4>
-                <p>{sourceType === 'resume' ? 'TCS Resume RAG Active' : 'Custom Document RAG Active'}</p>
+                <h4>Suyash AI Assistant</h4>
+                <p>Offline Fallback Active</p>
               </div>
             </div>
             <div className="chatbot-header-actions">
@@ -224,7 +300,7 @@ const ChatBot = () => {
           {showConfig && (
             <div className="rag-config-panel glass animate-fade-in">
               <div className="config-header">
-                <h5>Python RAG Source Configuration</h5>
+                <h5>RAG Source Configuration</h5>
                 <button className="config-close" onClick={() => setShowConfig(false)}><X size={16} /></button>
               </div>
 
@@ -244,7 +320,7 @@ const ChatBot = () => {
                     <option value="upload">Upload Custom Document (.txt, .md)</option>
                     <option value="url">Scrape Website URL</option>
                   </select>
-                  <p className="config-help">The selected document context will be parsed and loaded into the Python FastAPI pipeline.</p>
+                  <p className="config-help">The selected document context will be parsed and loaded into the RAG pipeline.</p>
                 </div>
 
                 {/* Dynamic Inputs */}
