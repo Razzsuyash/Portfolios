@@ -1,7 +1,7 @@
 import os
 import json
 import math
-import urllib.request
+import requests
 from http.server import BaseHTTPRequestHandler
 from openai import OpenAI
 
@@ -107,29 +107,28 @@ def cosine_similarity(a, b):
         return 0
     return dot / (mag_a * mag_b)
 
+# --- Google Gemini API Calls (using requests library) ---
 def get_gemini_embedding(text, gemini_key):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key={gemini_key}"
-    headers = {"Content-Type": "application/json"}
     payload = {
         "model": "models/text-embedding-004",
         "content": {"parts": [{"text": text}]}
     }
-    req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
-    with urllib.request.urlopen(req) as response:
-        res = json.loads(response.read().decode('utf-8'))
-        return res['embedding']['values']
+    response = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+    response.raise_for_status()
+    res = response.json()
+    return res['embedding']['values']
 
 def get_gemini_completion(prompt, gemini_key):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-    headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.4}
     }
-    req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
-    with urllib.request.urlopen(req) as response:
-        res = json.loads(response.read().decode('utf-8'))
-        return res['candidates'][0]['content']['parts'][0]['text']
+    response = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
+    response.raise_for_status()
+    res = response.json()
+    return res['candidates'][0]['content']['parts'][0]['text']
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
@@ -148,20 +147,21 @@ class handler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
         
-        try:
-            body = json.loads(post_data.decode('utf-8'))
-            query = body.get("query", "")
-            custom_text = body.get("custom_text", "")
+        # Parse payload
+        body = json.loads(post_data.decode('utf-8'))
+        query = body.get("query", "")
+        custom_text = body.get("custom_text", "")
 
-            # Support variants of environment variables (with/without _API)
+        try:
+            # Support variants of environment variables
             gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GEMINI_KEY")
             openai_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_KEY")
 
             context_source = custom_text if custom_text.strip() else RESUME_CONTEXT
             chunks = split_text_into_chunks(context_source, 500, 100)
 
+            # Prioritize Gemini API Key
             if gemini_key:
-                # Use Gemini RAG
                 chunk_vectors = [get_gemini_embedding(c, gemini_key) for c in chunks]
                 query_vector = get_gemini_embedding(query, gemini_key)
                 
@@ -177,7 +177,6 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             elif openai_key:
-                # Use OpenAI RAG
                 client = OpenAI(api_key=openai_key)
                 
                 embed_response = client.embeddings.create(
@@ -209,14 +208,15 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             else:
-                # Fallback to backend offline keyword search (Safe & 100% Free)
+                # Fallback to backend offline keyword search
                 result_text = query_offline_resume(query)
                 self.wfile.write(json.dumps({"success": True, "result": result_text}).encode('utf-8'))
 
         except Exception as e:
-            # Fallback on exceptions as well
-            try:
+            # If an API key is present but fails, return the actual error so we can debug it
+            if gemini_key or openai_key:
+                self.wfile.write(json.dumps({"success": False, "error": f"LLM API Error: {str(e)}"}).encode('utf-8'))
+            else:
+                # Silent fallback only if no keys are configured
                 result_text = query_offline_resume(query)
                 self.wfile.write(json.dumps({"success": True, "result": result_text}).encode('utf-8'))
-            except Exception as inner_e:
-                self.wfile.write(json.dumps({"success": False, "error": str(inner_e)}).encode('utf-8'))
