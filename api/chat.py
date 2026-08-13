@@ -107,7 +107,7 @@ def cosine_similarity(a, b):
         return 0
     return dot / (mag_a * mag_b)
 
-# --- Google Gemini API Calls (using requests library) ---
+# --- Google Gemini API Calls ---
 def get_gemini_embedding(text, gemini_key):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key={gemini_key}"
     payload = {
@@ -120,7 +120,8 @@ def get_gemini_embedding(text, gemini_key):
     return res['embedding']['values']
 
 def get_gemini_completion(prompt, gemini_key):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    # Set to gemini-1.5-pro for advanced reasoning capability
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={gemini_key}"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.4}
