@@ -1,12 +1,5 @@
-fastapi
-pydantic
-openai
-langchain
-langchain-community
-langchain-openai
-langchain-community
+pypdf
+python-dotenv
+langchain-core
 langchain-text-splitters
 langchain-google-genai
-langchain-chroma
-langchain-core
-pypdf
