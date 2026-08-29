@@ -1,6 +1,5 @@
 import os
 import json
-import re
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler
 
@@ -36,11 +35,16 @@ LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 
 GENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
-if not GOOGLE_API_KEY:
-    raise RuntimeError("GOOGLE_API_KEY is not configured.")
 
-if not os.path.exists(PDF_PATH):
-    raise FileNotFoundError(f"Resume PDF not found: {PDF_PATH}")
+def _check_config():
+    """Validate configuration lazily (on first request) rather than at
+    import time, so a misconfigured env var can't crash the whole
+    function's import and take down health checks too."""
+    if not GOOGLE_API_KEY:
+        raise RuntimeError("GOOGLE_API_KEY is not configured.")
+
+    if not os.path.exists(PDF_PATH):
+        raise FileNotFoundError(f"Resume PDF not found: {PDF_PATH}")
 
 
 # ============================================================
@@ -105,23 +109,6 @@ def is_allowed_question(query: str):
 
 
 # ============================================================
-# LOAD PDF (runs once per cold start)
-# ============================================================
-
-print("Loading resume PDF...")
-
-reader = PdfReader(PDF_PATH)
-pdf_text = ""
-
-for page in reader.pages:
-    text = page.extract_text()
-    if text:
-        pdf_text += text + "\n"
-
-print(f"Loaded {len(reader.pages)} pages.")
-
-
-# ============================================================
 # TEXT SPLITTING (simple recursive splitter, no LangChain)
 # ============================================================
 
@@ -179,11 +166,6 @@ def split_text(text, chunk_size=1000, chunk_overlap=200):
     return [c for c in overlapped if c.strip()]
 
 
-chunks = split_text(pdf_text, chunk_size=1000, chunk_overlap=200)
-
-print(f"Created {len(chunks)} chunks.")
-
-
 # ============================================================
 # GEMINI REST HELPERS (no SDK, no grpc, no protobuf)
 # ============================================================
@@ -233,15 +215,6 @@ def generate_content(prompt_text, temperature=0.2):
 
 
 # ============================================================
-# CREATE EMBEDDINGS (runs once per cold start)
-# ============================================================
-
-print("Creating document embeddings...")
-document_embeddings = embed_documents(chunks)
-print("Document embeddings created.")
-
-
-# ============================================================
 # COSINE SIMILARITY
 # ============================================================
 
@@ -257,15 +230,60 @@ def cosine_similarity(a, b):
 
 
 # ============================================================
+# LAZY INDEX BUILD
+#
+# PDF parsing + embedding creation is deferred to the first
+# incoming request instead of running at module import time.
+# This keeps cold starts from failing the whole function if
+# the embedding API is slow, rate-limited, or unreachable —
+# a failure here becomes a normal 500 JSON response instead
+# of an "could not import" platform-level crash. Results are
+# cached on the module for the lifetime of the warm instance.
+# ============================================================
+
+_index_cache = {"chunks": None, "embeddings": None}
+
+
+def _build_index():
+    if _index_cache["chunks"] is not None:
+        return _index_cache["chunks"], _index_cache["embeddings"]
+
+    print("Loading resume PDF...")
+    reader = PdfReader(PDF_PATH)
+    pdf_text = ""
+
+    for page in reader.pages:
+        text = page.extract_text()
+        if text:
+            pdf_text += text + "\n"
+
+    print(f"Loaded {len(reader.pages)} pages.")
+
+    built_chunks = split_text(pdf_text, chunk_size=1000, chunk_overlap=200)
+    print(f"Created {len(built_chunks)} chunks.")
+
+    print("Creating document embeddings...")
+    built_embeddings = embed_documents(built_chunks)
+    print("Document embeddings created.")
+
+    _index_cache["chunks"] = built_chunks
+    _index_cache["embeddings"] = built_embeddings
+
+    return built_chunks, built_embeddings
+
+
+# ============================================================
 # RETRIEVAL
 # ============================================================
 
 def get_context(query: str, top_k=4):
+    doc_chunks, doc_embeddings = _build_index()
+
     query_embedding = embed_query(query)
 
     scored_chunks = [
         (chunk, cosine_similarity(query_embedding, vector))
-        for chunk, vector in zip(chunks, document_embeddings)
+        for chunk, vector in zip(doc_chunks, doc_embeddings)
     ]
 
     scored_chunks.sort(key=lambda x: x[1], reverse=True)
@@ -332,6 +350,7 @@ Answer:
 # ============================================================
 
 def generate_answer(query: str):
+    _check_config()
     context = get_context(query, top_k=4)
 
     formatted_prompt = PROMPT_TEMPLATE.format(
