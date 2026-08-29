@@ -29,9 +29,19 @@ GOOGLE_API_KEY = (
 
 PORT = int(os.getenv("PORT", 8000))
 
+import os
+import json
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 PDF_PATH = os.getenv(
     "PDF_PATH",
-    "../data/SuyashRaj_082026 2.pdf"
+    str(BASE_DIR / "data" / "SuyashRaj_082026 2.pdf")
 )
 
 EMBEDDING_MODEL = os.getenv(
