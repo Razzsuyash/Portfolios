@@ -88,7 +88,7 @@ const ChatBot = () => {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: "Hi there! 👋 I'm **Suyash's Python AI Assistant**. Ask me anything about his backend experience at TCS, Kafka & IoT pipelines, projects, or contact details!\n\n*Note: This chatbot automatically queries a secure Python RAG endpoint or falls back offline if needed!*",
+      text: "Hi there! 👋 I'm **Suyash's AI Assistant**. Ask me anything about his backend experience at TCS, Kafka & IoT pipelines, projects, or contact details!\n\n*Note: This chatbot automatically queries a secure Python RAG endpoint or falls back offline if needed!*",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);

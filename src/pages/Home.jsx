@@ -11,6 +11,9 @@ const Home = () => {
     { label: "Microservices", icon: <Layers size={16} />, color: "accent" },
     { label: "RAG & AI Systems", icon: <Sparkles size={16} />, color: "accent" },
     { label: "Apache Kafka", icon: <Cpu size={16} />, color: "accent" },
+    { label: "Generative AI", icon: <Terminal size={16} />, color: "accent" },
+    { label: "LangChain & Langraph", icon: <Sparkles size={16} />, color: "accent" },
+    { label: "Model Context Protocol", icon: <Cpu size={16} />, color: "accent" },
     { label: "FastAPI & Python", icon: <Terminal size={16} />, color: "accent" },
   ];
 
@@ -21,7 +24,7 @@ const Home = () => {
           {/* Top Badge */}
           <div className="hero-badge delay-100">
             <span className="live-pulse-dot" style={{ display: 'inline-block', marginRight: '6px' }}></span>
-            Backend Engineer @ TCS • TotalEnergies IoT
+            Backend Engineer @ TCS
           </div>
 
           {/* Main Permanent Heading */}
