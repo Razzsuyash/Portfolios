@@ -31,7 +31,7 @@ PDF_PATH = os.getenv(
 )
 
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
-LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-3.6-flash")
 
 GENAI_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
